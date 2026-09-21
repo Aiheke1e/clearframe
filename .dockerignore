@@ -1,0 +1,5 @@
+.git
+miniprogram
+typings
+node_modules
+*.md
