@@ -1,0 +1,8 @@
+# 节点实际验证通过后，安装到 clearframe.service.d/30-x-proxy.conf。
+[Unit]
+Wants=shared-proxy.service
+After=shared-proxy.service
+
+[Service]
+EnvironmentFile=/lzzx/erv/mihomo/proxy.env
+Environment=ENABLE_X=1

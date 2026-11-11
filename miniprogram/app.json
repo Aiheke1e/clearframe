@@ -1,14 +1,12 @@
 {
-  "pages": [
-    "pages/index/index"
-  ],
+  "pages": ["pages/index/index"],
   "window": {
-    "navigationBarTextStyle": "white",
-    "navigationBarTitleText": "X视频下载",
-    "navigationBarBackgroundColor": "#0f1419",
-    "backgroundColor": "#0f1419"
+    "navigationBarTitleText": "ClearFrame",
+    "navigationBarBackgroundColor": "#eef1f5",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#eef1f5",
+    "backgroundTextStyle": "dark"
   },
   "style": "v2",
-  "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "sitemapLocation": "sitemap.json"
 }

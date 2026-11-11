@@ -1,59 +1,106 @@
-<!--index.wxml-->
 <view class="page">
-  <view class="title">X视频下载</view>
-  <view class="sub">支持抖音、快手视频去水印</view>
-
-  <textarea
-    class="input"
-    maxlength="-1"
-    auto-height
-    placeholder="粘贴链接"
-    value="{{input}}"
-    bindinput="onInput"
-  />
-
-  <view class="actions">
-    <button class="btn ghost" bindtap="onPaste" loading="{{pasting}}">粘贴</button>
-    <button class="btn primary" bindtap="onParse" loading="{{loading}}" disabled="{{loading}}">解析</button>
+  <view class="hero">
+    <view class="title">一键去水印工具</view>
   </view>
 
-  <view wx:if="{{showXTip}}" class="x-tip">X 视频需要翻墙才能获取</view>
-  <view wx:if="{{status}}" class="status {{statusType}}">{{status}}</view>
+  <view class="input-card neu-inset">
+    <textarea
+      class="link-input"
+      placeholder="抖音 · 快手 · X · 支持一次粘贴多条分享链接，自动提取并解析"
+      placeholder-class="placeholder"
+      maxlength="-1"
+      value="{{inputText}}"
+      bindinput="onInput"
+      auto-height
+      show-confirm-bar="{{false}}"
+    />
+  </view>
 
-  <block wx:if="{{items.length}}">
-    <view class="result-bar">
-      <text class="count">{{items.length}} 个文件</text>
-      <text wx:if="{{items.length > 1}}" class="save-all" bindtap="onSaveAll">全部保存</text>
+  <view class="actions">
+    <button class="btn btn-clear neu-raised" bindtap="onClear" disabled="{{loading || savingBatch}}" hover-class="btn-hover">
+      清空
+    </button>
+    <button
+      class="btn btn-parse neu-raised"
+      bindtap="onPasteAndParse"
+      loading="{{loading}}"
+      disabled="{{loading || savingBatch}}"
+      hover-class="btn-hover"
+    >
+      {{loading ? '解析中…' : '解析'}}
+    </button>
+  </view>
+
+  <view class="disclaimer">仅保存本人或已获授权的内容 · 不保存解析记录</view>
+  <view class="disclaimer" bindtap="onOpenPrivacy">查看隐私保护指引</view>
+
+  <view class="status" wx:if="{{statusText}}">
+    <text class="{{statusType}}" selectable>{{statusText}}</text>
+  </view>
+
+  <view class="result" wx:if="{{result}}">
+    <view class="result-head">
+      <text class="platform-tag">{{result.platformLabel}}</text>
+      <text class="result-title">{{result.title || '解析成功'}}</text>
+    </view>
+    <view class="result-author" wx:if="{{result.author}}">@{{result.author}}</view>
+    <view class="status" wx:for="{{result.errors}}" wx:key="url">
+      <text class="err">[{{item.platformLabel}}] {{item.message}}</text>
     </view>
 
-    <view class="card" wx:for="{{items}}" wx:key="index">
-      <view class="media-box">
+    <view class="toolbar">
+      <button class="toolbar-btn neu-raised" bindtap="onSelectAll" disabled="{{savingBatch}}">{{allSelected ? '取消全选' : '全选'}}</button>
+      <button class="toolbar-btn neu-raised" bindtap="onSaveSelected" disabled="{{!selectedCount || savingBatch}}" loading="{{savingBatch}}">{{savingBatch ? savingText : '保存已选' + (selectedCount ? '（' + selectedCount + '）' : '')}}</button>
+    </view>
+    <view class="grid">
+      <view wx:for="{{result.items}}" wx:key="index" class="tile {{item.selected ? 'selected' : ''}}" data-index="{{index}}" bindtap="onToggleItem">
         <video
-          wx:if="{{item.kind === 'video'}}"
-          class="media"
-          src="{{item.previewUrl}}"
+          wx:if="{{item.type === 'video'}}"
+          class="grid-preview"
+          src="{{item.url}}"
+          poster="{{item.cover}}"
           controls
-          object-fit="contain"
+          object-fit="cover"
           show-center-play-btn
-          enable-play-gesture
-          show-mute-btn
         />
         <image
           wx:else
-          class="media"
-          src="{{item.previewUrl}}"
-          mode="aspectFit"
-          lazy-load
+          class="grid-preview"
+          src="{{item.url}}"
+          mode="aspectFill"
+          show-menu-by-longpress
         />
-      </view>
-      <view class="card-foot">
-        <text class="name">{{item.kind === 'video' ? '视频' : '图片'}}{{items.length > 1 ? ' ' + (index + 1) : ''}}</text>
-        <view
-          class="save"
-          data-index="{{index}}"
-          bindtap="onSave"
-        >{{savingIndex === index || savingAll ? '…' : '保存'}}</view>
+        <view class="badge">{{item.type === 'video' ? '视频' : '图片'}} · {{item.platformLabel}}</view>
+        <view class="selection-mark" data-index="{{index}}" catchtap="onToggleItem">{{item.selected ? '✓' : ''}}</view>
       </view>
     </view>
-  </block>
+  </view>
+
+  <view class="features">
+    <view class="feat">
+      <view class="feat-icon neu-raised">
+        <text class="feat-mark mark-red">印</text>
+      </view>
+      <text class="feat-label">无水印保存</text>
+    </view>
+    <view class="feat">
+      <view class="feat-icon neu-raised">
+        <text class="feat-mark mark-blue">SQ</text>
+      </view>
+      <text class="feat-label">无损原画质</text>
+    </view>
+    <view class="feat">
+      <view class="feat-icon neu-raised">
+        <text class="feat-mark mark-green">∞</text>
+      </view>
+      <text class="feat-label">不限次数</text>
+    </view>
+    <view class="feat">
+      <view class="feat-icon neu-raised">
+        <text class="feat-mark mark-green">Free</text>
+      </view>
+      <text class="feat-label">免费使用</text>
+    </view>
+  </view>
+  <view class="usage" wx:if="{{usageCount !== null}}">已被使用多少次：{{usageCount}}</view>
 </view>

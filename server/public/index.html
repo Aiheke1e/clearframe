@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ClearFrame</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #eef1f5;
+      color: #2b3a55;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
+    }
+    .page { max-width: 960px; margin: 0 auto; padding: 28px 36px 80px; }
+    .hero { padding: 14px 4px 18px; }
+    h1 { margin: 0; font-size: clamp(26px, 4vw, 36px); color: #24375d; letter-spacing: 1px; line-height: 1.25; }
+    .subtitle { margin: 12px 0 0; color: #8b95a8; line-height: 1.55; }
+    .card {
+      margin-top: 0;
+      padding: 24px 26px;
+      background: #eef1f5;
+      border-radius: 22px;
+      box-shadow: inset 6px 6px 12px #d5dae3, inset -6px -6px 12px #ffffff;
+    }
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      border: 0;
+      resize: vertical;
+      background: transparent;
+      color: #2b3a55;
+      font: inherit;
+      font-size: 16px;
+      line-height: 1.5;
+      outline: none;
+    }
+    textarea::placeholder { color: #a7b0c0; }
+    .actions { display: flex; gap: 24px; margin-top: 32px; }
+    .actions button { flex: 1; min-height: 52px; font-size: 17px; font-weight: 600; }
+    #clear { color: #2f4b78; }
+    #parse { color: #1f9d55; }
+    button {
+      border: 0;
+      border-radius: 18px;
+      padding: 12px 18px;
+      font: inherit;
+      cursor: pointer;
+      background: #eef1f5;
+      color: #24375d;
+      box-shadow: 6px 6px 14px #d5dae3, -6px -6px 14px #ffffff;
+    }
+    button.primary { flex: 1; font-weight: 600; }
+    button:disabled { opacity: 0.6; cursor: default; }
+    button:not(:disabled):active { opacity: 0.86; transform: scale(0.985); }
+    button:focus-visible, textarea:focus-visible { outline: 2px solid #2f4b78; outline-offset: 4px; }
+    .note { margin: 22px 0 0; color: #9aa3b5; font-size: 13px; text-align: center; line-height: 1.55; }
+    .status { margin-top: 16px; min-height: 1.4em; white-space: pre-wrap; }
+    .status.ok { color: #1f8a4c; }
+    .status.err { color: #c24141; }
+    .status.info { color: #3d5278; }
+    .result { margin-top: 18px; }
+    .toolbar { display: flex; gap: 12px; margin-bottom: 14px; }
+    .toolbar button { flex: 1; }
+    .errors {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f7e9e9;
+      color: #a33b3b;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+    .error-row {
+      padding: 5px 0;
+      white-space: nowrap;
+    }
+    .error-row + .error-row {
+      border-top: 1px solid rgba(163, 59, 59, 0.12);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .tile {
+      position: relative;
+      padding: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 3 / 4;
+      box-shadow: 6px 6px 14px #d5dae3, -6px -6px 14px #ffffff;
+    }
+    .tile img, .tile video {
+      width: 100%;
+      height: 100%;
+      max-height: none;
+      object-fit: cover;
+      background: #111;
+      border-radius: 0;
+      pointer-events: none;
+    }
+    .tile.selected { outline: 3px solid #2a62d6; outline-offset: 0; }
+    .badge {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.62);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.2;
+      pointer-events: none;
+    }
+    .mark {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      color: transparent;
+      font-size: 16px;
+      line-height: 26px;
+      text-align: center;
+      box-shadow: none;
+      padding: 0;
+      pointer-events: none;
+    }
+    .tile.selected .mark { background: #2a62d6; color: #fff; }
+    .features { display: flex; justify-content: space-between; gap: 12px; max-width: 640px; margin: 44px auto 0; padding: 0 4px; }
+    .feat { width: 22%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .feat-icon { width: 64px; height: 64px; border-radius: 18px; background: #eef1f5; box-shadow: 6px 6px 14px #d5dae3, -6px -6px 14px #ffffff; display: flex; align-items: center; justify-content: center; }
+    .feat-mark { font-size: 22px; font-weight: 700; }
+    .mark-red { color: #e25555; text-decoration: line-through; }
+    .mark-blue { color: #3b82f6; }
+    .mark-green { color: #1f9d55; }
+    .feat-label { margin-top: 16px; font-size: 13px; color: #6b778c; line-height: 1.5; }
+    .usage { margin: 26px 0 0; text-align: center; font-size: 11px; color: #8b95a8; }
+    @media (max-width: 600px) {
+      .page { padding: 20px 18px 48px; }
+      .subtitle { font-size: 13px; }
+      .card { padding: 20px 18px; }
+      .actions { gap: 16px; margin-top: 24px; }
+      .actions button { min-height: 46px; font-size: 16px; }
+      .features { gap: 8px; margin-top: 32px; }
+      .feat-icon { width: 48px; height: 48px; border-radius: 14px; }
+      .feat-mark { font-size: 18px; }
+      .feat-label { margin-top: 12px; font-size: 11px; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1>一键去水印工具</h1>
+    </header>
+
+    <div class="card">
+      <textarea id="text" aria-label="分享文案或链接" placeholder="抖音 · 快手 · X · 支持一次粘贴多条分享链接，自动提取并解析"></textarea>
+    </div>
+
+    <div class="actions">
+      <button id="clear" type="button">清空</button>
+      <button id="parse" class="primary" type="button">解析</button>
+    </div>
+    <p class="note">内容归原作者所有 · 本工具不存储任何数据</p>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <div id="result" class="result"></div>
+    <section class="features" aria-label="功能特点">
+      <div class="feat">
+        <div class="feat-icon" aria-hidden="true"><span class="feat-mark mark-red">印</span></div>
+        <span class="feat-label">无水印保存</span>
+      </div>
+      <div class="feat">
+        <div class="feat-icon" aria-hidden="true"><span class="feat-mark mark-blue">SQ</span></div>
+        <span class="feat-label">无损原画质</span>
+      </div>
+      <div class="feat">
+        <div class="feat-icon" aria-hidden="true"><span class="feat-mark mark-green">∞</span></div>
+        <span class="feat-label">不限次数</span>
+      </div>
+      <div class="feat">
+        <div class="feat-icon" aria-hidden="true"><span class="feat-mark mark-green">Free</span></div>
+        <span class="feat-label">免费使用</span>
+      </div>
+    </section>
+    <p id="usage" class="usage" hidden>已被使用多少次：<span id="usage-count">0</span></p>
+  </main>
+  <script>
+    const textEl = document.getElementById("text");
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+    const parseBtn = document.getElementById("parse");
+    const usageEl = document.getElementById("usage");
+    const usageCountEl = document.getElementById("usage-count");
+
+    function showUsage(count) {
+      if (!Number.isSafeInteger(count) || count < 0) return;
+      usageCountEl.textContent = String(count);
+      usageEl.hidden = false;
+    }
+
+    async function loadUsage() {
+      try {
+        const response = await fetch("/api/usage", { cache: "no-store" });
+        if (response.ok) showUsage((await response.json()).count);
+      } catch { /* 计数读取失败不影响解析 */ }
+    }
+    loadUsage();
+
+    const proxiedHosts = [
+      ".douyinvod.com",
+      ".douyinpic.com",
+      ".douyincdn.com",
+      ".byteimg.com",
+      ".pstatp.com",
+      ".yximgs.com",
+      ".kwimgs.com",
+      ".kwaicdn.com",
+      ".twimg.com",
+    ];
+
+    const platformLabels = { douyin: "抖音", kuaishou: "快手", x: "X" };
+
+    function playable(url) {
+      try {
+        const host = new URL(url).hostname.toLowerCase();
+        if (proxiedHosts.some((suffix) => host.endsWith(suffix))) {
+          return "/api/media?url=" + encodeURIComponent(url);
+        }
+      } catch {
+        /* keep the original url */
+      }
+      return url;
+    }
+
+    function downloadHref(url, fileName) {
+      const src = playable(url);
+      if (src.startsWith("/api/media?")) {
+        return src + "&download=1&name=" + encodeURIComponent(fileName);
+      }
+      return src;
+    }
+
+    function setStatus(text, type) {
+      statusEl.textContent = text || "";
+      statusEl.className = "status" + (type ? " " + type : "");
+    }
+
+    function fileStamp() {
+      const now = new Date();
+      const pad = (value, width) => String(value).padStart(width, "0");
+      return (
+        String(now.getFullYear()) +
+        pad(now.getMonth() + 1, 2) +
+        pad(now.getDate(), 2) +
+        pad(now.getHours(), 2) +
+        pad(now.getMinutes(), 2) +
+        pad(now.getSeconds(), 2) +
+        pad(now.getMilliseconds(), 3)
+      );
+    }
+
+    function renderErrors(errors) {
+      if (errors && errors.length) {
+        const box = document.createElement("div");
+        box.className = "errors";
+        box.setAttribute("role", "list");
+        box.setAttribute("aria-label", "解析失败的链接");
+        errors.forEach((err, index) => {
+          const row = document.createElement("div");
+          row.className = "error-row";
+          row.setAttribute("role", "listitem");
+          const lines = (err.lineNumbers || []).filter(line => Number.isInteger(line) && line > 0);
+          const location = lines.length ? "第 " + lines.join("、") + " 行" : "链接 " + (err.linkIndex || index + 1);
+          const platform = platformLabels[err.platform] || err.platform || "";
+          const message = String(err.message || "解析失败").replace(/\s+/g, " ");
+          row.textContent = location + (platform ? " [" + platform + "]" : "") + " " + (err.url || "") + " — " + message;
+          box.appendChild(row);
+        });
+        resultEl.appendChild(box);
+      }
+    }
+
+    function renderGallery(items, errors) {
+      resultEl.innerHTML = "";
+      const selected = new Set();
+      renderErrors(errors);
+
+      const toolbar = document.createElement("div");
+      toolbar.className = "toolbar";
+      const selectAllBtn = document.createElement("button");
+      selectAllBtn.type = "button";
+      const downloadBtn = document.createElement("button");
+      downloadBtn.type = "button";
+      downloadBtn.className = "primary";
+      toolbar.append(selectAllBtn, downloadBtn);
+
+      const grid = document.createElement("div");
+      grid.className = "grid";
+      const tiles = items.map((item, index) => {
+        const tile = document.createElement("button");
+        tile.type = "button";
+        tile.className = "tile";
+        const media = item.type === "image" ? document.createElement("img") : document.createElement("video");
+        media.src = playable(item.url);
+        media.alt = "";
+        if (media.tagName === "VIDEO") {
+          media.muted = true;
+          media.playsInline = true;
+          if (item.cover) media.poster = playable(item.cover);
+        }
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        const platform = platformLabels[item.platform] || "";
+        badge.textContent = (item.type === "image" ? "图片" : "视频") + (platform ? " · " + platform : "");
+        const mark = document.createElement("span");
+        mark.className = "mark";
+        mark.textContent = "✓";
+        tile.append(media, badge, mark);
+        tile.onclick = () => {
+          if (selected.has(index)) selected.delete(index);
+          else selected.add(index);
+          tile.classList.toggle("selected", selected.has(index));
+          refreshToolbar();
+        };
+        grid.appendChild(tile);
+        return { item, tile };
+      });
+
+      function refreshToolbar() {
+        const allOn = selected.size === tiles.length;
+        selectAllBtn.textContent = allOn ? "取消全选" : "全选";
+        downloadBtn.textContent = "下载已选" + (selected.size ? "（" + selected.size + "）" : "");
+        downloadBtn.disabled = selected.size === 0;
+      }
+
+      selectAllBtn.onclick = () => {
+        const allOn = selected.size === tiles.length;
+        selected.clear();
+        if (!allOn) tiles.forEach((_, index) => selected.add(index));
+        tiles.forEach(({ tile }, index) => tile.classList.toggle("selected", selected.has(index)));
+        refreshToolbar();
+      };
+
+      downloadBtn.onclick = async () => {
+        const picks = tiles.filter((_, index) => selected.has(index));
+        if (!picks.length) return;
+        downloadBtn.disabled = true;
+        const stamp = fileStamp();
+        setStatus("开始下载 " + picks.length + " 个文件…", "info");
+        for (let i = 0; i < picks.length; i += 1) {
+          const pick = picks[i];
+          const ext = pick.item.type === "image" ? ".jpg" : ".mp4";
+          const fileName = picks.length === 1 ? stamp + ext : stamp + "-" + (i + 1) + ext;
+          const link = document.createElement("a");
+          link.href = downloadHref(pick.item.url, fileName);
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          await new Promise((resolve) => setTimeout(resolve, 350));
+        }
+        setStatus("已开始下载 " + picks.length + " 个文件", "ok");
+        refreshToolbar();
+      };
+
+      refreshToolbar();
+      resultEl.append(toolbar, grid);
+    }
+
+    document.getElementById("clear").onclick = () => {
+      textEl.value = "";
+      resultEl.innerHTML = "";
+      setStatus("");
+    };
+
+    parseBtn.onclick = async () => {
+      const text = textEl.value;
+      if (!text.trim()) {
+        setStatus("请先粘贴分享链接", "err");
+        return;
+      }
+      parseBtn.disabled = true;
+      resultEl.innerHTML = "";
+      setStatus("正在提取链接并解析…", "info");
+      try {
+        const res = await fetch("/api/parse", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.ok === false) {
+          if (Array.isArray(data.errors) && data.errors.length) {
+            renderErrors(data.errors);
+            setStatus(data.batch
+              ? "识别到 " + data.total + " 条链接，成功 0，失败 " + data.failed
+              : "解析失败，请查看下方链接及原因", "err");
+            return;
+          }
+          throw new Error(data.message || "解析失败");
+        }
+        const items = Array.isArray(data.items) ? data.items.filter((i) => i && i.url) : [];
+        if (!items.length) throw new Error("未解析到可下载的图片或视频");
+        if (Number.isSafeInteger(data.usageCount)) showUsage(data.usageCount);
+        else loadUsage();
+        const errors = Array.isArray(data.errors) ? data.errors : [];
+        renderGallery(items, errors);
+        const videoCount = items.filter((item) => item.type !== "image").length;
+        const imageCount = items.filter((item) => item.type === "image").length;
+        let message = "共 " + items.length + " 个媒体";
+        if (videoCount) message += "，视频 " + videoCount;
+        if (imageCount) message += "，图片 " + imageCount;
+        if (data.batch) {
+          message =
+            "识别到 " +
+            data.total +
+            " 条链接，成功 " +
+            data.success +
+            "，失败 " +
+            data.failed +
+            "\n" +
+            message;
+        }
+        message += "。点缩略图选中后下载";
+        setStatus(message, errors.length ? "info" : "ok");
+      } catch (err) {
+        setStatus(err.message || "解析失败", "err");
+      } finally {
+        parseBtn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

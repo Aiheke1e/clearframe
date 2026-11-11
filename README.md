@@ -1,59 +1,97 @@
-# X视频下载（微信小程序）
+# ClearFrame
 
-支持 **X / 抖音 / 快手** 链接解析，预览后保存到相册，**iOS / 安卓** 通用。
+粘贴抖音、快手、X 分享链接，解析已发布的视频和图集，在网页或微信小程序中预览、选择并保存媒体。仅处理本人或已获授权的内容。
+
+## 功能
+
+- 自动提取分享文案中的多个链接，支持跨平台批量解析，每批最多 20 条不同链接。
+- 缩略图预览、全选、批量下载与小程序相册保存。
+- 网页错误逐条单行展示原输入行号、完整链接和失败原因，长行可横向滚动。
+- 部分失败时保留成功结果；全部失败时列出全部错误；重复链接标明对应行号。
+- 成功解析请求累计计数，批量整体计一次；失败、下载和刷新不增加。
+- 抖音、快手可直连，X 相关请求可通过指定代理转发。
+- 请求地址、DNS 结果及重定向逐跳校验，拒绝访问内网和保留地址。
 
 ## 目录
 
-- `miniprogram/` 微信小程序前端
-- `server/serve.py` 解析 + 下载代理后端（抖音/快手必需）
-
-## 快速开始
-
-### 1. 启动后端
-
-```bat
-cd D:\project\demo1\server
-py -3 serve.py
+```text
+miniprogram/          微信小程序前端
+server/public/        网页界面
+server/src/           Node.js / Express 解析 API
+server/deploy/        Nginx 和 systemd 部署脚本、模板
+server/test/          自动测试
+server/data/usage.json  初始累计计数
+project.config.json   微信开发者工具项目配置
 ```
 
-终端会打印局域网地址，例如 `http://192.168.1.8:8787`。
+## 本地启动
 
-### 2. 配置小程序 API
+需要 Node.js 18.17 或更高版本。在 PowerShell 中执行：
 
-编辑 `miniprogram/utils/config.ts`：
-
-```ts
-export const API_BASE = 'http://192.168.1.8:8787'  // 改成你的电脑局域网 IP
+```powershell
+cd server
+npm ci
+$env:REGION = "all"
+npm start
 ```
 
-真机预览时，手机和电脑必须同一 WiFi。
+浏览器打开 `http://127.0.0.1:8787`。X 访问需要部署环境具备可用的海外网络连接。
 
-### 3. 开发者工具
+需要按平台代理时，启动前设置：
 
-1. 用微信开发者工具打开 `D:\project\demo1`
-2. 详情 → 本地设置 → 勾选 **不校验合法域名、web-view、TLS 版本及 HTTPS 证书**
-3. 编译运行；真机调试可测保存到相册
+```powershell
+$env:OUTBOUND_PROXY = "http://127.0.0.1:7897"
+npm start
+```
 
-## 使用
+应用只对 X 相关域名使用该代理；国内平台继续直连。真实节点凭据在项目外单独管理，不应提交到仓库。
 
-1. 在 X / 抖音 / 快手 App 复制分享链接  
-2. 回到小程序点「粘贴」→「解析下载」  
-3. 下方预览，点「保存」写入系统相册（iOS / 安卓）
+## 微信小程序
 
-## 正式上线注意
+1. 在微信开发者工具中导入仓库根目录。
+2. 将 `project.config.json` 中的 AppID 改为自己的小程序 AppID。
+3. 在 `miniprogram/app.js` 中设置 `cnApiBase` 和 `overseasApiBase`；同一后端支持全部平台时，可填写同一个 HTTPS 地址。
+4. 在微信公众平台配置相应的 request、downloadFile 合法域名，保持域名校验开启。
+5. 编译、真机验证、上传代码，再按平台要求提交审核和发布。
 
-微信要求配置 **request / downloadFile 合法域名**（必须 HTTPS）。
+网页及后端部署与微信前端上传是两个独立步骤。当前线上访问入口为 https://aihekele.xyz。
 
-可选方案：
+## 接口
 
-1. 把 `server/serve.py` 部署到你的 HTTPS 服务器  
-2. `API_BASE` 改成该域名  
-3. 公众平台后台把该域名加入 request、downloadFile 合法域名  
+| 接口 | 用途 |
+| --- | --- |
+| `GET /health` | 服务状态及启用的平台 |
+| `POST /api/parse` | 提交 `{ "text": "分享文案或链接" }`，支持多条链接 |
+| `GET /api/media?url=...` | 校验后的媒体中转，支持 Range 请求 |
+| `GET /api/usage` | 返回 `{ "count": 0 }`，只读、不增加次数 |
 
-开发阶段用「不校验合法域名」即可调试。
+批量错误包含 `url`、`platform`、`message`、`lineNumbers` 和 `linkIndex`。`lineNumbers` 从 1 开始，保留空行并记录重复链接的多个位置。全部失败时 HTTP 返回错误状态，同时保留完整 `errors` 列表。
 
-## 说明
+## 部署配置
 
-- 仅支持公开内容  
-- 请遵守各平台规则与版权  
-- 抖音一般为无水印地址  
+| 环境变量 | 用途 |
+| --- | --- |
+| `REGION` | `cn` 启用抖音、快手；`overseas` 启用 X；`all` 全部启用 |
+| `ENABLE_X` | 设置为 `1` 时，可在 `cn` 模式额外启用 X |
+| `HOST` / `PORT` | 监听地址及端口 |
+| `OUTBOUND_PROXY` | X 请求使用的 HTTP CONNECT 代理 |
+| `CLEARFRAME_USAGE_FILE` | 指定累计计数 JSON 文件，建议放在发布目录外持久保存 |
+
+`server/deploy/` 提供当前服务器的部署模板，复用时需检查服务名、目录、IP、域名和证书路径。代理服务独立于项目部署，项目发布不覆盖代理节点配置。`server/.env.example` 供参考；运行时需将变量传入 Node.js 进程。
+
+累计计数通过单个 Node.js 进程串行、原子写入 JSON。多个进程同时写入前应改用共享数据库。项目不保存解析历史。
+
+## 验证
+
+```powershell
+cd server
+npm test
+```
+
+覆盖批量成功与失败、原始行号、累计次数、媒体请求、网络校验、代理路由、DNS 和小程序交互。
+
+## 支持范围
+
+- 支持公开、已发布的视频和图集；当前不支持抖音直播链接。
+- 删除、私密、封禁或平台限制的内容可能无法解析。
+- 上游页面及接口变化时，需更新对应的 `server/src/parsers/` 解析器。

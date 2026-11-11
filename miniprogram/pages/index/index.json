@@ -1,9 +1,4 @@
 {
-  "navigationBarTitleText": "X视频下载",
-  "navigationBarBackgroundColor": "#0f1419",
-  "navigationBarTextStyle": "white",
-  "backgroundColor": "#0f1419",
-  "backgroundColorTop": "#0f1419",
-  "backgroundColorBottom": "#0f1419",
+  "navigationBarTitleText": "ClearFrame",
   "usingComponents": {}
 }

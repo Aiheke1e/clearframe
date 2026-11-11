@@ -1,4 +1,0 @@
-App<IAppOption>({
-  globalData: {},
-  onLaunch() {},
-})

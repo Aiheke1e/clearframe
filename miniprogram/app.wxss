@@ -1,5 +1,19 @@
 page {
-  background: #0f1419;
-  color: #e7e9ea;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  min-height: 100%;
+  background: #eef1f5;
+  color: #2b3a55;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue",
+    sans-serif;
+}
+
+.neu-inset {
+  background: #eef1f5;
+  box-shadow: inset 6px 6px 12px #d5dae3, inset -6px -6px 12px #ffffff;
+  border-radius: 22px;
+}
+
+.neu-raised {
+  background: #eef1f5;
+  box-shadow: 6px 6px 14px #d5dae3, -6px -6px 14px #ffffff;
+  border-radius: 18px;
 }

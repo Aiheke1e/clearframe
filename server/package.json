@@ -1,0 +1,20 @@
+{
+  "name": "clearframe-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ClearFrame 解析服务：国内抖音/快手，海外 X",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "undici": "^6.29.1"
+  }
+}
