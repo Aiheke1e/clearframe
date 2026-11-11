@@ -231,3 +231,19 @@
 .selection-mark { position: absolute; top: 16rpx; right: 16rpx; width: 52rpx; height: 52rpx; border-radius: 50%; background: rgba(255,255,255,.92); text-align: center; line-height: 52rpx; font-size: 32rpx; color: transparent; }
 .selected .selection-mark { color: #fff; background: #2a62d6; }
 .usage { margin-top: 52rpx; text-align: center; font-size: 22rpx; color: #8b95a8; }
+.preview-hint { margin: 0 0 24rpx; color: #8b95a8; font-size: 24rpx; }
+.video-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #a7b0c0; font-size: 24rpx; padding-top: 100rpx; box-sizing: border-box; }
+.play-mark { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 88rpx; height: 88rpx; line-height: 88rpx; text-align: center; border-radius: 50%; background: rgba(0,0,0,.5); color: #fff; font-size: 36rpx; }
+.transfer-card { margin-top: 28rpx; padding: 28rpx; border-radius: 24rpx; }
+.transfer-heading { display: flex; justify-content: space-between; gap: 16rpx; color: #2f4b78; font-size: 24rpx; }
+.transfer-track { height: 12rpx; background: #d9e0e9; border-radius: 12rpx; margin-top: 16rpx; overflow: hidden; }
+.transfer-track.small { height: 8rpx; margin-top: 10rpx; }
+.transfer-fill { height: 100%; background: #1f9d55; transition: width .15s; }
+.transfer-row { margin-top: 24rpx; }
+.transfer-detail { margin-top: 10rpx; color: #8b95a8; font-size: 22rpx; }
+.preview-mask { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.85); padding: 28rpx; box-sizing: border-box; }
+.preview-panel { width: 100%; }
+.preview-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; color: #fff; font-size: 28rpx; }
+.preview-close { margin: 0; padding: 8rpx 28rpx; line-height: 1.6; font-size: 26rpx; color: #fff; background: #344054; border-radius: 14rpx; }
+.preview-close::after { border: 0; }
+.preview-player { display: block; width: 100%; height: 68vh; background: #000; }

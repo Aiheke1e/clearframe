@@ -93,7 +93,8 @@
       aspect-ratio: 3 / 4;
       box-shadow: 6px 6px 14px #d5dae3, -6px -6px 14px #ffffff;
     }
-    .tile img, .tile video {
+    .preview-open { display: block; width: 100%; height: 100%; border: 0; padding: 0; border-radius: 0; box-shadow: none; background: #111827; color: #a7b0c0; }
+    .tile img {
       width: 100%;
       height: 100%;
       max-height: none;
@@ -129,9 +130,17 @@
       text-align: center;
       box-shadow: none;
       padding: 0;
-      pointer-events: none;
+      cursor: pointer;
     }
     .tile.selected .mark { background: #2a62d6; color: #fff; }
+    .play-mark { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; height: 48px; line-height: 48px; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 22px; text-align: center; pointer-events: none; }
+    .media-dialog { width: min(960px, 94vw); padding: 18px; border: 0; border-radius: 18px; background: #101828; color: #fff; }
+    .media-dialog::backdrop { background: rgba(0,0,0,.82); }
+    .preview-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+    .preview-close { background: #344054; color: #fff; box-shadow: none; border-radius: 10px; }
+    .media-player { display: flex; justify-content: center; }
+    .media-player video, .media-player img { display: block; max-width: 100%; max-height: 76vh; background: #000; }
+    .media-player video { width: 100%; height: 70vh; }
     .features { display: flex; justify-content: space-between; gap: 12px; max-width: 640px; margin: 44px auto 0; padding: 0 4px; }
     .feat { width: 22%; display: flex; flex-direction: column; align-items: center; text-align: center; }
     .feat-icon { width: 64px; height: 64px; border-radius: 18px; background: #eef1f5; box-shadow: 6px 6px 14px #d5dae3, -6px -6px 14px #ffffff; display: flex; align-items: center; justify-content: center; }
@@ -192,6 +201,10 @@
     </section>
     <p id="usage" class="usage" hidden>已被使用多少次：<span id="usage-count">0</span></p>
   </main>
+  <dialog id="media-preview" class="media-dialog" aria-label="媒体预览">
+    <div class="preview-heading"><span id="preview-title">媒体预览</span><button id="preview-close" class="preview-close" type="button">关闭</button></div>
+    <div id="media-player" class="media-player"></div>
+  </dialog>
   <script>
     const textEl = document.getElementById("text");
     const statusEl = document.getElementById("status");
@@ -199,6 +212,38 @@
     const parseBtn = document.getElementById("parse");
     const usageEl = document.getElementById("usage");
     const usageCountEl = document.getElementById("usage-count");
+    const previewDialog = document.getElementById("media-preview");
+    const playerEl = document.getElementById("media-player");
+
+    function stopPreview() {
+      const video = playerEl.querySelector("video");
+      if (video) { video.pause(); video.removeAttribute("src"); video.load(); }
+      playerEl.replaceChildren();
+    }
+
+    function closePreview() {
+      stopPreview();
+      if (previewDialog.open) previewDialog.close();
+    }
+    document.getElementById("preview-close").onclick = closePreview;
+    previewDialog.onclose = () => { if (!previewDialog.open) stopPreview(); };
+    previewDialog.onclick = event => { if (event.target === previewDialog) closePreview(); };
+
+    function openPreview(item) {
+      closePreview();
+      const media = document.createElement(item.type === "image" ? "img" : "video");
+      media.src = playable(item.url);
+      if (item.type === "video") {
+        media.controls = true;
+        media.playsInline = true;
+        media.preload = "metadata";
+        if (item.cover) media.poster = playable(item.cover);
+      } else media.alt = "图片预览";
+      playerEl.appendChild(media);
+      document.getElementById("preview-title").textContent = item.type === "video" ? "视频预览" : "图片预览";
+      previewDialog.showModal();
+      if (item.type === "video") media.play().catch(() => {});
+    }
 
     function showUsage(count) {
       if (!Number.isSafeInteger(count) || count < 0) return;
@@ -305,33 +350,45 @@
       const grid = document.createElement("div");
       grid.className = "grid";
       const tiles = items.map((item, index) => {
-        const tile = document.createElement("button");
-        tile.type = "button";
+        const tile = document.createElement("div");
         tile.className = "tile";
-        const media = item.type === "image" ? document.createElement("img") : document.createElement("video");
-        media.src = playable(item.url);
-        media.alt = "";
-        if (media.tagName === "VIDEO") {
-          media.muted = true;
-          media.playsInline = true;
-          if (item.cover) media.poster = playable(item.cover);
+        const preview = document.createElement("button");
+        preview.type = "button";
+        preview.className = "preview-open";
+        preview.setAttribute("aria-label", (item.type === "video" ? "播放视频 " : "预览图片 ") + (index + 1));
+        if (item.type === "image" || item.cover) {
+          const image = document.createElement("img");
+          image.loading = "lazy";
+          image.src = playable(item.type === "image" ? item.url : item.cover);
+          image.alt = "";
+          preview.appendChild(image);
+        } else preview.textContent = "点击播放视频";
+        if (item.type === "video") {
+          const play = document.createElement("span");
+          play.className = "play-mark";
+          play.textContent = "▶";
+          preview.appendChild(play);
         }
+        preview.onclick = () => openPreview(item);
         const badge = document.createElement("span");
         badge.className = "badge";
         const platform = platformLabels[item.platform] || "";
         badge.textContent = (item.type === "image" ? "图片" : "视频") + (platform ? " · " + platform : "");
-        const mark = document.createElement("span");
+        const mark = document.createElement("button");
+        mark.type = "button";
         mark.className = "mark";
         mark.textContent = "✓";
-        tile.append(media, badge, mark);
-        tile.onclick = () => {
+        mark.setAttribute("aria-label", "选择第 " + (index + 1) + " 个媒体");
+        mark.setAttribute("aria-pressed", "false");
+        tile.append(preview, badge, mark);
+        mark.onclick = () => {
           if (selected.has(index)) selected.delete(index);
           else selected.add(index);
           tile.classList.toggle("selected", selected.has(index));
           refreshToolbar();
         };
         grid.appendChild(tile);
-        return { item, tile };
+        return { item, tile, mark };
       });
 
       function refreshToolbar() {
@@ -339,6 +396,7 @@
         selectAllBtn.textContent = allOn ? "取消全选" : "全选";
         downloadBtn.textContent = "下载已选" + (selected.size ? "（" + selected.size + "）" : "");
         downloadBtn.disabled = selected.size === 0;
+        tiles.forEach(({ mark }, index) => mark.setAttribute("aria-pressed", String(selected.has(index))));
       }
 
       selectAllBtn.onclick = () => {
@@ -352,6 +410,7 @@
       downloadBtn.onclick = async () => {
         const picks = tiles.filter((_, index) => selected.has(index));
         if (!picks.length) return;
+        closePreview();
         downloadBtn.disabled = true;
         const stamp = fileStamp();
         setStatus("开始下载 " + picks.length + " 个文件…", "info");
@@ -376,6 +435,7 @@
     }
 
     document.getElementById("clear").onclick = () => {
+      closePreview();
       textEl.value = "";
       resultEl.innerHTML = "";
       setStatus("");
@@ -388,6 +448,7 @@
         return;
       }
       parseBtn.disabled = true;
+      closePreview();
       resultEl.innerHTML = "";
       setStatus("正在提取链接并解析…", "info");
       try {
@@ -429,7 +490,7 @@
             "\n" +
             message;
         }
-        message += "。点缩略图选中后下载";
+        message += "。点击封面预览，点击右上角勾选后下载";
         setStatus(message, errors.length ? "info" : "ok");
       } catch (err) {
         setStatus(err.message || "解析失败", "err");

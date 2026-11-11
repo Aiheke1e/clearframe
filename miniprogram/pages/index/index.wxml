@@ -38,6 +38,16 @@
     <text class="{{statusType}}" selectable>{{statusText}}</text>
   </view>
 
+  <view class="transfer-card neu-inset" wx:if="{{downloadVisible}}">
+    <view class="transfer-heading"><text>保存进度 {{downloadProgress}}%</text><text>{{downloadSummary}}</text></view>
+    <view class="transfer-track"><view class="transfer-fill" style="width: {{downloadProgress}}%;"></view></view>
+    <view class="transfer-row" wx:for="{{downloadRows}}" wx:key="id">
+      <view class="transfer-heading"><text>{{item.label}}</text><text>{{item.phase === 'saving' ? '正在保存' : (item.known ? item.percent + '%' : '下载中')}}</text></view>
+      <view class="transfer-track small"><view class="transfer-fill" style="width: {{item.percent}}%;"></view></view>
+      <view class="transfer-detail">{{item.detail}}</view>
+    </view>
+  </view>
+
   <view class="result" wx:if="{{result}}">
     <view class="result-head">
       <text class="platform-tag">{{result.platformLabel}}</text>
@@ -52,27 +62,29 @@
       <button class="toolbar-btn neu-raised" bindtap="onSelectAll" disabled="{{savingBatch}}">{{allSelected ? '取消全选' : '全选'}}</button>
       <button class="toolbar-btn neu-raised" bindtap="onSaveSelected" disabled="{{!selectedCount || savingBatch}}" loading="{{savingBatch}}">{{savingBatch ? savingText : '保存已选' + (selectedCount ? '（' + selectedCount + '）' : '')}}</button>
     </view>
+    <view class="preview-hint">点击封面预览，点击右上角勾选后保存</view>
     <view class="grid">
-      <view wx:for="{{result.items}}" wx:key="index" class="tile {{item.selected ? 'selected' : ''}}" data-index="{{index}}" bindtap="onToggleItem">
-        <video
-          wx:if="{{item.type === 'video'}}"
-          class="grid-preview"
-          src="{{item.url}}"
-          poster="{{item.cover}}"
-          controls
-          object-fit="cover"
-          show-center-play-btn
-        />
+      <view wx:for="{{result.items}}" wx:key="index" class="tile {{item.selected ? 'selected' : ''}}" data-index="{{index}}" bindtap="onPreviewItem">
         <image
-          wx:else
+          wx:if="{{item.type === 'image' || item.cover}}"
           class="grid-preview"
-          src="{{item.url}}"
+          src="{{item.type === 'image' ? item.url : item.cover}}"
           mode="aspectFill"
+          lazy-load
           show-menu-by-longpress
         />
+        <view wx:else class="video-placeholder">点击播放视频</view>
+        <view wx:if="{{item.type === 'video'}}" class="play-mark">▶</view>
         <view class="badge">{{item.type === 'video' ? '视频' : '图片'}} · {{item.platformLabel}}</view>
         <view class="selection-mark" data-index="{{index}}" catchtap="onToggleItem">{{item.selected ? '✓' : ''}}</view>
       </view>
+    </view>
+  </view>
+
+  <view class="preview-mask" wx:if="{{previewItem}}">
+    <view class="preview-panel">
+      <view class="preview-heading"><text>视频预览</text><button class="preview-close" bindtap="onClosePreview">关闭</button></view>
+      <video id="media-preview" class="preview-player" src="{{previewItem.url}}" poster="{{previewItem.cover}}" controls autoplay object-fit="contain" show-center-play-btn enable-progress-gesture binderror="onPreviewError" />
     </view>
   </view>
 

@@ -81,7 +81,7 @@ function downloadName(requested, contentType) {
 }
 
 async function fetchMedia(url, headers, signal) {
-  const options = { headers, signal, timeout: 120000 };
+  const options = { headers, signal, timeout: 600000 };
   if (shouldUseProxy(url)) return proxyFetch(url, options, MEDIA_DOMAINS);
   return safeFetch(url, options, MEDIA_DOMAINS);
 }
@@ -103,6 +103,7 @@ app.get("/api/media", async (req, res) => {
         "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
       referer: mediaReferer(target.hostname),
       accept: "*/*",
+      "accept-encoding": "identity",
       ...(req.headers.range ? { range: req.headers.range } : {}),
     }, controller.signal);
     if (!upstream.ok && upstream.status !== 206) {
@@ -113,6 +114,7 @@ app.get("/api/media", async (req, res) => {
     const contentType = upstream.headers.get("content-type") || "application/octet-stream";
     res.status(upstream.status);
     res.setHeader("content-type", contentType);
+    res.setHeader("x-accel-buffering", "no");
     const length = upstream.headers.get("content-length");
     if (length) res.setHeader("content-length", length);
     const range = upstream.headers.get("content-range");
@@ -128,7 +130,7 @@ app.get("/api/media", async (req, res) => {
       res.end();
       return;
     }
-    await pipeline(Readable.fromWeb(upstream.body), res);
+    await pipeline(Readable.fromWeb(upstream.body, { highWaterMark: 64 * 1024 }), res);
   } catch (err) {
     if (!res.headersSent && !res.destroyed) {
       res.status(502).json({ ok: false, message: err?.message || "媒体请求失败" });
